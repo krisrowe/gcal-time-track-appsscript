@@ -1,0 +1,7 @@
+# Google Apps Script / clasp
+.clasp.json
+
+# Node / Common
+node_modules
+*.log
+.env
