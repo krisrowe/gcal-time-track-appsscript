@@ -11,8 +11,23 @@
 function onOpen() {
   SpreadsheetApp.getUi()
       .createMenu('Time Tracking')
-      .addItem('Generate Weekly Report', 'generateTimeTrackingReport')
+      .addItem('Generate for This Week', 'generateThisWeekReport')
+      .addItem('Generate for Last Week', 'generateLastWeekReport')
       .addToUi();
+}
+
+/**
+ * Wrapper function to generate a report for the current week.
+ */
+function generateThisWeekReport() {
+  generateTimeTrackingReport('this');
+}
+
+/**
+ * Wrapper function to generate a report for the previous week.
+ */
+function generateLastWeekReport() {
+  generateTimeTrackingReport('last');
 }
 
 /**
@@ -57,8 +72,9 @@ function clearExistingWeekData(sheet, weekStartDate) {
 
 /**
  * Main function to generate the time tracking report.
+ * @param {string} weekOption - Determines which week to report on. Accepts 'this' or 'last'.
  */
-function generateTimeTrackingReport() {
+function generateTimeTrackingReport(weekOption) {
   const ui = SpreadsheetApp.getUi();
   const keywords = getKeywordsFromSheet();
   
@@ -66,11 +82,9 @@ function generateTimeTrackingReport() {
     ui.alert('Configuration is empty. Please add keywords to your Google Sheet in the "Projects" tab, column A.');
     return;
   }
-  
-  ui.alert('Starting report generation...');
 
   try {
-    // 1. Smartly calculate the dates for the target week
+    // 1. Calculate the dates for the target week based on the chosen option
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const dayOfWeek = today.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
@@ -78,14 +92,15 @@ function generateTimeTrackingReport() {
     let startDate, endDate;
     let reportWeekDescription;
 
-    // If it's Fri, Sat, Sun, or Mon, report on LAST week
-    if ([0, 1, 5, 6].includes(dayOfWeek)) {
-      reportWeekDescription = "the previous week";
-      const sundayOfThisWeek = new Date(today.setDate(today.getDate() - dayOfWeek));
-      startDate = new Date(sundayOfThisWeek.setDate(sundayOfThisWeek.getDate() - 7));
-    } else { // Otherwise (Tue, Wed, Thu), report on THIS week
+    // Get the date for the most recent Sunday
+    const sundayOfThisWeek = new Date(today.setDate(today.getDate() - dayOfWeek));
+
+    if (weekOption === 'this') {
       reportWeekDescription = "the current week";
-      startDate = new Date(today.setDate(today.getDate() - dayOfWeek));
+      startDate = sundayOfThisWeek;
+    } else { // 'last'
+      reportWeekDescription = "the previous week";
+      startDate = new Date(new Date(sundayOfThisWeek).setDate(sundayOfThisWeek.getDate() - 7));
     }
     
     endDate = new Date(startDate);
@@ -94,8 +109,8 @@ function generateTimeTrackingReport() {
     const startFormatted = Utilities.formatDate(startDate, Session.getScriptTimeZone(), 'yyyy-MM-dd');
     const endFormatted = Utilities.formatDate(endDate, Session.getScriptTimeZone(), 'yyyy-MM-dd');
 
-    // 2. Prepare the output sheet and clear old data
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    spreadsheet.toast(`Generating report for ${reportWeekDescription}...`);
     let outputSheet = spreadsheet.getSheetByName('Time');
     if (!outputSheet) {
       outputSheet = spreadsheet.insertSheet('Time');
@@ -115,10 +130,10 @@ function generateTimeTrackingReport() {
 
     events.forEach(event => {
       const myStatus = event.getMyStatus();
-      const eventStatus = event.getStatus();
+      const eventStatus = typeof event.getStatus === 'function' ? event.getStatus() : null;
 
-      // 1. Skip events that are canceled or that the user has declined.
-      if (eventStatus === CalendarApp.EventStatus.CANCELLED || myStatus === CalendarApp.GuestStatus.NO) {
+      // 1. Skip events that are canceled. Compare to a string as the enum is unreliable.
+      if ((eventStatus && String(eventStatus).toUpperCase() === 'CANCELLED') || myStatus === CalendarApp.GuestStatus.NO) {
         return; // Skip this event entirely
       }
 
@@ -161,7 +176,7 @@ function generateTimeTrackingReport() {
       }
     }
 
-    ui.alert(`Report complete for ${reportWeekDescription} (${startFormatted} to ${endFormatted}). Check the "Time" sheet.`);
+    spreadsheet.toast(`Report complete for ${reportWeekDescription} (${startFormatted} to ${endFormatted}).`, 'Report Status', 5);
 
   } catch (e) {
     Logger.log(`Error during report generation: ${e.message}`);

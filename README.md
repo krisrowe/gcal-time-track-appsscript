@@ -8,7 +8,7 @@ This project is designed to be managed locally using the [`clasp`](https://githu
 
 - **Automatic Time Tracking:** Reads your Google Calendar events and calculates the time spent.
 - **Keyword-Based Categorization:** Define your own project keywords in a Google Sheet to automatically categorize events.
-- **Smart Week Selection:** Automatically determines whether to report on the *current* week or the *previous* week based on the day you run it.
+- **Weekly Report Generation:** Generate reports for the current week or the previous week.
 - **Data Persistence:** Appends data to a "Time" tab in your sheet, automatically replacing any previous data for that week to prevent duplicates.
 - **Easy to Use:** Run the report from a custom "Time Tracking" menu directly within your Google Sheet.
 
@@ -109,7 +109,7 @@ Follow these steps if you are a developer contributing to an existing, already-c
 
 1.  **Reload** your Google Sheet.
 2.  A new menu named **"Time Tracking"** will appear.
-3.  Click **Time Tracking > Generate Weekly Report**.
+3.  Click **Time Tracking > Generate for This Week** or **Generate for Last Week**.
 4.  The first time, you will need to grant the script permission to access your Calendar and Sheets.
 5.  The script will run and create a "Time" tab with your categorized report.
 
