@@ -112,3 +112,56 @@ Follow these steps if you are a developer contributing to an existing, already-c
 3.  Click **Time Tracking > Generate Weekly Report**.
 4.  The first time, you will need to grant the script permission to access your Calendar and Sheets.
 5.  The script will run and create a "Time" tab with your categorized report.
+
+---
+
+## Future Enhancements
+
+### CI/CD with GitHub Actions
+
+It is possible to automate the deployment of this script using GitHub Actions. This allows you to automatically push changes to the Apps Script project whenever you merge to your `main` branch.
+
+The main challenge is authenticating `clasp` in a non-interactive environment. The solution is to use GitHub Secrets to store your `clasp` authentication token.
+
+**Setup Steps:**
+
+1.  **Find Your Local Auth Token:** On your local machine where you ran `clasp login`, find the authentication file. It is located at `~/.clasprc.json`.
+2.  **Create a GitHub Secret:**
+    - In your GitHub repository, go to **Settings > Secrets and variables > Actions**.
+    - Create a new repository secret named `CLASP_RC_JSON`.
+    - Copy the entire JSON content from your local `~/.clasprc.json` file and paste it into the value of the secret.
+3.  **Create the Workflow File:**
+    - Create a new file in your repository at `.github/workflows/deploy.yml`.
+    - Add the following content to the file:
+
+    ```yaml
+    name: Deploy to Google Apps Script
+
+    on:
+      push:
+        branches:
+          - main # Deploy whenever code is pushed to the main branch
+
+    jobs:
+      deploy:
+        runs-on: ubuntu-latest
+        steps:
+          - name: Checkout
+            uses: actions/checkout@v3
+
+          - name: Setup Node
+            uses: actions/setup-node@v3
+            with:
+              node-version: '18'
+
+          - name: Install clasp
+            run: npm install -g @google/clasp
+
+          - name: Create .clasprc.json from Secret
+            run: echo '${{ secrets.CLASP_RC_JSON }}' > ~/.clasprc.json
+
+          - name: Push to Apps Script
+            run: clasp push --force
+    ```
+
+Once this is set up, any push to the `main` branch will automatically trigger the action and deploy your script.
