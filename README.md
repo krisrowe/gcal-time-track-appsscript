@@ -119,20 +119,24 @@ Follow these steps if you are a developer contributing to an existing, already-c
 
 ### CI/CD with GitHub Actions
 
-It is possible to automate the deployment of this script using GitHub Actions. This allows you to automatically push changes to the Apps Script project whenever you merge to your `main` branch.
+For a professional workflow, you can automate the deployment of this script using GitHub Actions. This allows you to automatically push changes to the Apps Script project whenever you merge to your `main` branch.
 
-The main challenge is authenticating `clasp` in a non-interactive environment. The solution is to use GitHub Secrets to store your `clasp` authentication token.
+The primary challenge is providing both **authentication** and the **project ID** to the non-interactive CI/CD environment. The solution is to use GitHub Secrets to securely store both of these values.
 
 **Setup Steps:**
 
-1.  **Find Your Local Auth Token:** On your local machine where you ran `clasp login`, find the authentication file. It is located at `~/.clasprc.json`.
-2.  **Create a GitHub Secret:**
-    - In your GitHub repository, go to **Settings > Secrets and variables > Actions**.
-    - Create a new repository secret named `CLASP_RC_JSON`.
-    - Copy the entire JSON content from your local `~/.clasprc.json` file and paste it into the value of the secret.
-3.  **Create the Workflow File:**
-    - Create a new file in your repository at `.github/workflows/deploy.yml`.
-    - Add the following content to the file:
+1.  **Create GitHub Secrets:** You will need to create two secrets in your GitHub repository. Go to **Settings > Secrets and variables > Actions** and add the following:
+    -   **`CLASP_RC_JSON`**:
+        -   On your local machine where you ran `clasp login`, find the authentication file located at `~/.clasprc.json`.
+        -   Copy the **entire JSON content** of this file and paste it as the value for this secret.
+    -   **`SCRIPT_ID`**:
+        -   Open your Apps Script project and go to **Project Settings (⚙️)**.
+        -   Copy your **Script ID**.
+        -   Paste this ID as the value for this secret.
+
+2.  **Create the Workflow File:**
+    -   Create a new file in your repository at `.github/workflows/deploy.yml`.
+    -   Add the following content to the file. This workflow will trigger on every push to the `main` branch, create the necessary configuration files from your secrets, and push the code.
 
     ```yaml
     name: Deploy to Google Apps Script
@@ -140,7 +144,7 @@ The main challenge is authenticating `clasp` in a non-interactive environment. T
     on:
       push:
         branches:
-          - main # Deploy whenever code is pushed to the main branch
+          - main
 
     jobs:
       deploy:
@@ -157,8 +161,11 @@ The main challenge is authenticating `clasp` in a non-interactive environment. T
           - name: Install clasp
             run: npm install -g @google/clasp
 
-          - name: Create .clasprc.json from Secret
+          - name: Create .clasprc.json for Authentication
             run: echo '${{ secrets.CLASP_RC_JSON }}' > ~/.clasprc.json
+
+          - name: Create .clasp.json for Project ID
+            run: echo '{"scriptId":"${{ secrets.SCRIPT_ID }}", "rootDir":"."}' > .clasp.json
 
           - name: Push to Apps Script
             run: clasp push --force
