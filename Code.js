@@ -114,17 +114,43 @@ function generateTimeTrackingReport() {
     timeReport['Other'] = 0;
 
     events.forEach(event => {
-      const title = event.getTitle();
+      const myStatus = event.getMyStatus();
+      const eventStatus = event.getStatus();
+
+      // 1. Skip events that are canceled or that the user has declined.
+      if (eventStatus === CalendarApp.EventStatus.CANCELLED || myStatus === CalendarApp.GuestStatus.NO) {
+        return; // Skip this event entirely
+      }
+
       const durationInMillis = event.getEndTime().getTime() - event.getStartTime().getTime();
+      
+      // Combine all relevant fields into a single string for searching
+      const guestEmails = event.getGuestList().map(guest => guest.getEmail()).join(' ');
+      const searchableContent = [
+        event.getTitle(),
+        event.getDescription(),
+        event.getCreators().join(' '), // Organizer/creator emails
+        guestEmails
+      ].join(' ').toLowerCase();
+
       let matched = false;
       for (const keyword of keywords) {
-        if (title.toLowerCase().includes(keyword.toLowerCase())) {
+        if (searchableContent.includes(keyword.toLowerCase())) {
           timeReport[keyword] += durationInMillis;
           matched = true;
-          break;
+          break; // Assign to the first category that matches
         }
       }
-      if (!matched) timeReport['Other'] += durationInMillis;
+
+      // 2. For non-project events, only include them if the user is attending.
+      if (!matched) {
+        const isAttending = (myStatus === CalendarApp.GuestStatus.YES || 
+                             myStatus === CalendarApp.GuestStatus.MAYBE || 
+                             myStatus === CalendarApp.GuestStatus.OWNER);
+        if (isAttending) {
+          timeReport['Other'] += durationInMillis;
+        }
+      }
     });
 
     // 5. Write the new results
