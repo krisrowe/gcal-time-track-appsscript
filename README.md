@@ -18,51 +18,91 @@ This project is designed to be managed locally using the [`clasp`](https://githu
 - [Node.js](https://nodejs.org/) and `npm`.
 - `git` and the `gh` CLI (optional, but recommended for GitHub workflow).
 
-## Setup Instructions
+---
 
-Follow these steps to set up the project in your own Google Account.
+## Setup & Installation
 
-### 1. Clone the Repository
-Clone this repository to your local machine:
-```bash
-git clone https://github.com/krisrowe/gcal-time-track-appscript.git
-cd gcal-time-track-appscript
-```
+There are two main workflows for setting up this project:
 
-### 2. Install and Authenticate `clasp`
-Install the `clasp` CLI globally and log in to your Google account.
-```bash
-npm install -g @google/clasp
-clasp login
-```
-Follow the prompts in your browser to authorize `clasp`.
+1.  **First-Time Setup:** For users setting up the script for the first time in a new Google Sheet.
+2.  **Developer Setup:** For developers contributing to an existing project.
 
-### 3. Create the Google Sheet & Apps Script Project
-This script is designed to be **bound** to a Google Sheet, which will hold your configuration and the final report.
+### Option 1: First-Time Setup (New Project)
 
-1.  **Create a new Google Sheet.**
-2.  Rename the sheet to something descriptive (e.g., "Time Tracking").
-3.  Create a new tab and name it **`Projects`**.
-4.  In the `Projects` tab, add your keywords to **Column A**, starting in cell `A1`. Each cell should contain one keyword (e.g., "Client Meeting", "Development", "Project X").
-5.  In the top menu, go to **Extensions > Apps Script**. This will create a new, bound Apps Script project.
+Follow these steps to set up the project from scratch in your own Google Account.
 
-### 4. Configure the Project
-1.  **Enable the Apps Script API:** Visit [script.google.com/home/usersettings](https://script.google.com/home/usersettings) and turn on the "Google Apps Script API".
-2.  **Get the Script ID:** In the Apps Script editor, click the **Project Settings (⚙️)** icon on the left. Copy the **Script ID**.
-3.  **Create `.clasp.json`:** In your local project directory, create a new file named `.clasp.json` and add the following content, pasting your Script ID in the appropriate place:
-    ```json
-    {
-      "scriptId": "YOUR_SCRIPT_ID_HERE",
-      "rootDir": "."
-    }
+1.  **Clone the Repository:**
+    ```bash
+    git clone https://github.com/krisrowe/gcal-time-track-appsscript.git
+    cd gcal-time-track-appsscript
     ```
 
-### 5. Push the Code
-Push the local code to your Apps Script project.
-```bash
-clasp push --force
-```
-The `--force` flag may be needed on the first push to overwrite the default files.
+2.  **Install and Authenticate `clasp`:**
+    ```bash
+    npm install -g @google/clasp
+    clasp login
+    ```
+
+3.  **Create the Google Sheet & Apps Script Project:**
+    - Create a new **Google Sheet**.
+    - Create a new tab and name it **`Projects`**.
+    - In the `Projects` tab, add your keywords to **Column A**, starting in cell `A1`.
+    - In the top menu, go to **Extensions > Apps Script**. This creates a new, bound Apps Script project.
+
+4.  **Configure the Project:**
+    - **Enable the Apps Script API:** Visit [script.google.com/home/usersettings](https://script.google.com/home/usersettings) and turn on the "Google Apps Script API".
+    - **Get the Script ID:** In the Apps Script editor, click the **Project Settings (⚙️)** icon and copy the **Script ID**.
+    - **Create `.clasp.json`:** In your local project directory, create a file named `.clasp.json` with the following content, pasting in your Script ID:
+      ```json
+      {
+        "scriptId": "YOUR_SCRIPT_ID_HERE",
+        "rootDir": "."
+      }
+      ```
+
+5.  **Push the Code:**
+    ```bash
+    clasp push --force
+    ```
+
+### Option 2: Developer Setup (Existing Project)
+
+Follow these steps if you are a developer contributing to an existing, already-configured Google Sheet.
+
+1.  **Clone the Repository:**
+    ```bash
+    git clone https://github.com/krisrowe/gcal-time-track-appsscript.git
+    cd gcal-time-track-appsscript
+    ```
+
+2.  **Install and Authenticate `clasp`:**
+    ```bash
+    npm install -g @google/clasp
+    clasp login
+    ```
+
+3.  **Get the Script ID:**
+    - You must be granted editor access to the existing Google Sheet and its bound Apps Script project.
+    - Open the sheet, go to **Extensions > Apps Script**.
+    - In the Apps Script editor, click the **Project Settings (⚙️)** icon and copy the **Script ID**.
+
+4.  **Configure the Project:**
+    - **Enable the Apps Script API:** Visit [script.google.com/home/usersettings](https://script.google.com/home/usersettings) and turn on the "Google Apps Script API".
+    - **Create `.clasp.json`:** Create the file with the Script ID you just copied:
+      ```json
+      {
+        "scriptId": "THE_EXISTING_SCRIPT_ID_HERE",
+        "rootDir": "."
+      }
+      ```
+
+5.  **Pull the Latest Code:**
+    - Pull the most recent version of the script from the server to ensure your local environment is up-to-date before making changes.
+    ```bash
+    clasp pull
+    ```
+
+---
 
 ## Usage
 
