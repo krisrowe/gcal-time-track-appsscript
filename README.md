@@ -48,6 +48,7 @@ Follow these steps to set up the project from scratch in your own Google Account
     - Create a new tab and name it **`Projects`**.
     - In the `Projects` tab, add your keywords to **Column A**, starting in cell `A1`.
     - In the top menu, go to **Extensions > Apps Script**. This creates a new, bound Apps Script project.
+    - (Optional) Rename the script project. By default, it will be named "Untitled Project". Click the title in the Apps Script editor to give it a more descriptive name, like "Time Tracking Report". This name is for your reference only and does not affect the script's functionality.
 
 4.  **Configure the Project:**
     - **Enable the Apps Script API:** Visit [script.google.com/home/usersettings](https://script.google.com/home/usersettings) and turn on the "Google Apps Script API".
