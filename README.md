@@ -168,7 +168,7 @@ The primary challenge is providing both **authentication** and the **project ID*
             run: echo '{"scriptId":"${{ secrets.SCRIPT_ID }}", "rootDir":"."}' > .clasp.json
 
           - name: Push to Apps Script
-            run: clasp push --force
+            run: clasp push
     ```
 
 Once this is set up, any push to the `main` branch will automatically trigger the action and deploy your script.
