@@ -71,6 +71,35 @@ function clearExistingWeekData(sheet, weekStartDate) {
 }
 
 /**
+ * Extracts a clean task name from an event title by removing project-related prefixes.
+ * Handles prefixes like '<project>:' or 'Work: <project> -'.
+ * @param {string} title The full title of the calendar event.
+ * @param {string} projectName The name of the project matched to the event.
+ * @returns {string} The cleaned task name, or the original title if no prefix is matched.
+ */
+function getTaskFromEventTitle(title, projectName) {
+  // Escape special regex characters in the project name.
+  const escapedProjectName = projectName.replace(/[.*+?^${}()|[\\\]/g, '\\$&');
+
+  // First, try to match with a "Work : project :" prefix
+  const regexWithWork = new RegExp(`^Work\s*[:\-]\s*${escapedProjectName}\s*[:\-]\s*(.+)`, 'i');
+  let match = title.match(regexWithWork);
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+
+  // If that fails, try to match with just a "project :" prefix
+  const regexWithoutWork = new RegExp(`^${escapedProjectName}\s*[:\-]\s*(.+)`, 'i');
+  match = title.match(regexWithoutWork);
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+
+  // Otherwise, return the original title.
+  return title.trim();
+}
+
+/**
  * Main function to generate the time tracking report.
  * @param {string} weekOption - Determines which week to report on. Accepts 'this' or 'last'.
  */
@@ -114,7 +143,7 @@ function generateTimeTrackingReport(weekOption) {
     let outputSheet = spreadsheet.getSheetByName('Time');
     if (!outputSheet) {
       outputSheet = spreadsheet.insertSheet('Time');
-      outputSheet.appendRow(['Week Start', 'Week End', 'Category', 'Hours']);
+      outputSheet.appendRow(['Week Start', 'Week End', 'Category', 'Hours', 'Tasks']);
     } else {
       clearExistingWeekData(outputSheet, startFormatted);
     }
@@ -123,10 +152,12 @@ function generateTimeTrackingReport(weekOption) {
     const calendar = CalendarApp.getDefaultCalendar();
     const events = calendar.getEvents(startDate, endDate);
 
-    // 4. Categorize event durations
+    // 4. Categorize event durations and tasks
     const timeReport = {};
-    keywords.forEach(keyword => { timeReport[keyword] = 0; });
-    timeReport['Other'] = 0;
+    keywords.forEach(keyword => { 
+      timeReport[keyword] = { hours: 0, tasks: [] }; 
+    });
+    timeReport['Other'] = { hours: 0, tasks: [] };
 
     events.forEach(event => {
       const myStatus = event.getMyStatus();
@@ -138,11 +169,14 @@ function generateTimeTrackingReport(weekOption) {
       }
 
       const durationInMillis = event.getEndTime().getTime() - event.getStartTime().getTime();
+      if (durationInMillis === 0) return; // Skip zero-duration events
+
+      const title = event.getTitle();
       
       // Combine all relevant fields into a single string for searching
       const guestEmails = event.getGuestList().map(guest => guest.getEmail()).join(' ');
       const searchableContent = [
-        event.getTitle(),
+        title,
         event.getDescription(),
         event.getCreators().join(' '), // Organizer/creator emails
         guestEmails
@@ -151,7 +185,9 @@ function generateTimeTrackingReport(weekOption) {
       let matched = false;
       for (const keyword of keywords) {
         if (searchableContent.includes(keyword.toLowerCase())) {
-          timeReport[keyword] += durationInMillis;
+          const taskName = getTaskFromEventTitle(title, keyword);
+          timeReport[keyword].hours += durationInMillis;
+          timeReport[keyword].tasks.push(taskName);
           matched = true;
           break; // Assign to the first category that matches
         }
@@ -163,18 +199,23 @@ function generateTimeTrackingReport(weekOption) {
                              myStatus === CalendarApp.GuestStatus.MAYBE || 
                              myStatus === CalendarApp.GuestStatus.OWNER);
         if (isAttending) {
-          timeReport['Other'] += durationInMillis;
+          timeReport['Other'].hours += durationInMillis;
+          timeReport['Other'].tasks.push(title); // For 'Other', we use the full title
         }
       }
     });
 
     // 5. Write the new results
     for (const category in timeReport) {
-      const hours = timeReport[category] / (1000 * 60 * 60);
+      const hours = timeReport[category].hours / (1000 * 60 * 60);
       if (hours > 0) {
-        outputSheet.appendRow([startFormatted, endFormatted, category, hours.toFixed(2)]);
+        const taskList = timeReport[category].tasks.join('\n');
+        outputSheet.appendRow([startFormatted, endFormatted, category, hours.toFixed(2), taskList]);
       }
     }
+
+    // Set text wrapping on the new Tasks column
+    outputSheet.getRange(1, 5, outputSheet.getMaxRows(), 1).setWrap(true);
 
     spreadsheet.toast(`Report complete for ${reportWeekDescription} (${startFormatted} to ${endFormatted}).`, 'Report Status', 5);
 

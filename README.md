@@ -63,7 +63,7 @@ Follow these steps to set up the project from scratch in your own Google Account
 
 5.  **Push the Code:**
     ```bash
-    clasp push --force
+    clasp push
     ```
 
 ### Option 2: Developer Setup (Existing Project)
